@@ -7,7 +7,7 @@ use embedded_hal::prelude::_embedded_hal_blocking_serial_Write;
 use embedded_hal::prelude::_embedded_hal_serial_Read;
 use msp430fr2x5x_hal::serial;
 use msp430fr2x5x_hal::serial::{Rx, Tx};
-use crate::pac::E_USCI_A1;
+use msp430fr2355::E_USCI_A1;
 
 pub static mut RX_GLOBAL: MaybeUninit<Rx<E_USCI_A1>> = MaybeUninit::uninit();
 pub static mut TX_GLOBAL: MaybeUninit<Tx<E_USCI_A1>> = MaybeUninit::uninit();
