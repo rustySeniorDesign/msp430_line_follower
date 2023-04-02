@@ -1,0 +1,1 @@
+# Line follower demo for MSP430 with TI RSLK dev kit
