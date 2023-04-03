@@ -30,6 +30,7 @@ impl MotorPins for RightMotor {
     type Enable = Pin<P3, Pin0, Output>;
 }
 
+#[derive(Copy, Clone)]
 pub enum MotorDirection{
     Forward = 0,
     Reverse = 1,
