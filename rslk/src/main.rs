@@ -50,7 +50,12 @@ fn main() -> ! {
             .aclk_refoclk()
             .freeze(&mut fram);
         let pmm = Pmm::new(periph.PMM);
+
         let p4 = Batch::new(periph.P4).split(&pmm);
+        let p5 = Batch::new(periph.P5).split(&pmm);
+        let p7 = Batch::new(periph.P7).split(&pmm);
+        let p9 = Batch::new(periph.P9).split(&pmm);
+
         let (tx, mut rx) = SerialConfig::new(
             periph.E_USCI_A1,
             BitOrder::LsbFirst,
@@ -65,6 +70,19 @@ fn main() -> ! {
         init_serial(rx, tx);
 
         print_bytes(b"Serial started");
+
+        let mut line_sensor = line_sensor::LineSensorArray::new(
+            p5.pin3.to_output(),
+            p9.pin2.to_output(),
+            p7.pin0.pulldown(),
+            p7.pin1.pulldown(),
+            p7.pin2.pulldown(),
+            p7.pin3.pulldown(),
+            p7.pin4.pulldown(),
+            p7.pin5.pulldown(),
+            p7.pin6.pulldown(),
+            p7.pin7.pulldown(),
+        );
 
         loop {
             asm::barrier();
