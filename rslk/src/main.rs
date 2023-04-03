@@ -3,6 +3,7 @@
 #![feature(abi_msp430_interrupt)]
 #![feature(core_panic)]
 
+mod encoder;
 mod line_sensor;
 mod motor;
 mod queuebuf;

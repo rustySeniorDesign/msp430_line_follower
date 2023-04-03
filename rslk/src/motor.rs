@@ -37,7 +37,7 @@ pub enum MotorDirection{
 
 pub struct Motor<PINS: MotorPins> {
     dir: PINS::Direction,
-    pwm: PINS::PWMl,
+    pwm: PINS::PWM,
     en: PINS::Enable,
 }
 
@@ -45,18 +45,27 @@ impl<PINS: MotorPins> Motor<PINS>{
 
     pub fn new<DIR: Into<PINS::Direction>, PWM: Into<PINS::PWM>, EN: Into<PINS::Enable>>
         (dir:DIR, pwm:PWM, en:EN) -> Self{
-        Motor{dir, pwm, en}
+        // TODO
+        Motor{
+            dir: dir.into(),
+            pwm: pwm.into(),
+            en: en.into()
+        }
     }
 
     pub fn set_speed(&mut self, speed: u8){
-
+        // TODO
     }
 
     pub fn set_direction(&mut self, direction: MotorDirection){
-
+        // TODO
     }
 
-    pub fn enable(&mut self, en: bool){
+    pub fn enable(&mut self){
+        // TODO
+    }
 
+    pub fn disable(&mut self){
+        // TODO
     }
 }
