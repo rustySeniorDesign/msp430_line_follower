@@ -173,6 +173,8 @@ const MAX_SPEED_13_5 : u16 = (MAX_SPEED as f32 * 0.135) as u16;
 
 fn line_response(left: &mut Motor<LeftMotor>, right: &mut Motor<RightMotor>, line_val: u8){
     let bits = count_set_bits(line_val);
+
+    // Based off of https://www.instructables.com/Robot-Line-Follower/
     match bits{
         0 =>{}
         1 =>{
