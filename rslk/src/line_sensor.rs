@@ -136,14 +136,14 @@ impl LineSensorBusy {
     /// Rightmost sensor is bit 0, leftmost is bit 7
     pub fn peek_result(&self) -> u8{
         unsafe {
-            let res = ((self.out0.is_low().ok().unwrap_unchecked() as u8) << 7u8)
-                    | ((self.out1.is_low().ok().unwrap_unchecked() as u8) << 6u8)
-                    | ((self.out2.is_low().ok().unwrap_unchecked() as u8) << 5u8)
-                    | ((self.out3.is_low().ok().unwrap_unchecked() as u8) << 4u8)
-                    | ((self.out4.is_low().ok().unwrap_unchecked() as u8) << 3u8)
-                    | ((self.out5.is_low().ok().unwrap_unchecked() as u8) << 2u8)
-                    | ((self.out6.is_low().ok().unwrap_unchecked() as u8) << 1u8)
-                    | (self.out7.is_low().ok().unwrap_unchecked() as u8);
+            let res = ((self.out0.is_high().ok().unwrap_unchecked() as u8) << 7u8)
+                    | ((self.out1.is_high().ok().unwrap_unchecked() as u8) << 6u8)
+                    | ((self.out2.is_high().ok().unwrap_unchecked() as u8) << 5u8)
+                    | ((self.out3.is_high().ok().unwrap_unchecked() as u8) << 4u8)
+                    | ((self.out4.is_high().ok().unwrap_unchecked() as u8) << 3u8)
+                    | ((self.out5.is_high().ok().unwrap_unchecked() as u8) << 2u8)
+                    | ((self.out6.is_high().ok().unwrap_unchecked() as u8) << 1u8)
+                    | (self.out7.is_high().ok().unwrap_unchecked() as u8);
             res
         }
     }

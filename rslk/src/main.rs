@@ -96,7 +96,7 @@ fn main() -> ! {
         let mut right_motor: Motor<RightMotor> = Motor::new(p3.pin1.to_output(),
                                                           right_pwm,
                                                           p3.pin0.to_output());
-        let mut motor_pair = MotorPair::new(left_motor, right_motor);
+        // let mut motor_pair = MotorPair::new(left_motor, right_motor);
 
 
         let mut line_sensor_r : LineSensorReady = LineSensorReady::new(
@@ -130,7 +130,10 @@ fn main() -> ! {
         // print_bytes(b"Stop\n");
         //
         // motor_pair.disable();
-
+        left_motor.enable();
+        right_motor.enable();
+        left_motor.forward();
+        right_motor.forward();
         loop {
             let mut line_sensor_b : LineSensorBusy = line_sensor_r.start_read();
             for _ in 0 .. 60{
@@ -143,11 +146,192 @@ fn main() -> ! {
             print_bytes(&byte_to_hex(val));
             print_bytes(b"\n");
 
+            line_response(&mut left_motor, &mut right_motor, val);
             delay_ms(100u16);
             asm::barrier();
         }
     }
     loop{}
+}
+
+
+fn count_set_bits(mut val: u8) -> u8{
+    let mut count = 0;
+    for _ in 0..8{
+        count += val & 0x1;
+        val >>= 1;
+    }
+    count
+}
+
+const MAX_SPEED : u16 = 500u16;
+const MAX_SPEED_90 : u16 = (MAX_SPEED as f32 * 0.90) as u16;
+const MAX_SPEED_75 : u16 = (MAX_SPEED as f32 * 0.75) as u16;
+const MAX_SPEED_50 : u16 = (MAX_SPEED as f32 * 0.5) as u16;
+const MAX_SPEED_25 : u16 = (MAX_SPEED as f32 * 0.25) as u16;
+const MAX_SPEED_13_5 : u16 = (MAX_SPEED as f32 * 0.135) as u16;
+
+fn line_response(left: &mut Motor<LeftMotor>, right: &mut Motor<RightMotor>, line_val: u8){
+    let bits = count_set_bits(line_val);
+    match bits{
+        0 =>{}
+        1 =>{
+            match line_val {
+                0x80 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_13_5);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED_13_5);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        2 =>{
+            match line_val {
+                0b1100_0000 =>{
+                    left.set_speed(MAX_SPEED_25);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0110_0000 =>{
+                    left.set_speed(MAX_SPEED_25);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0011_0000 =>{
+                    left.set_speed(MAX_SPEED_50);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0001_1000 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0000_1100 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_50);
+                }
+                0b0000_0110 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_25);
+                }
+                0b0000_0011 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_25);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        3 =>{
+            match line_val {
+                0b1110_0000 =>{
+                    left.set_speed(MAX_SPEED_50);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0111_0000 =>{
+                    left.set_speed(MAX_SPEED_75);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0011_1000 =>{
+                    left.set_speed(MAX_SPEED_90);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0001_1100 =>{
+                    left.set_speed(MAX_SPEED_90);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0000_1110 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_75);
+                }
+                0b0000_0111 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_50);
+                }
+                0b1001_1000 =>{
+                    left.set_speed(0u16);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0001_1001 =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(0u16);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        4 =>{
+            match line_val {
+                0b1111_0000 => {
+                    left.set_speed(0u16);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0000_1111 => {
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(0u16);
+                }
+                0b1100_1100 | 0b1101_1000 => {
+                    left.set_speed(0u16);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0011_0011 | 0b0001_1011 => {
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(0u16);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        5 =>{
+            match line_val {
+                0b1111_1000 => {
+                    left.set_speed(0u16);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0001_1111 => {
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(0u16);
+                }
+                0b1101_1100 => {
+                    left.set_speed(MAX_SPEED_13_5);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0011_1011 => {
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED_13_5);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        6 =>{
+            match line_val {
+                0b1111_1100 => {
+                    left.set_speed(0u16);
+                    right.set_speed(MAX_SPEED);
+                }
+                0b0011_1111 => {
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(0u16);
+                }
+                _ =>{
+                    left.set_speed(MAX_SPEED);
+                    right.set_speed(MAX_SPEED);
+                }
+            }
+        }
+        _ =>{
+            left.set_speed(MAX_SPEED);
+            right.set_speed(MAX_SPEED_90);
+        }
+    }
 }
 
 fn delay_ms(ms: u16){
