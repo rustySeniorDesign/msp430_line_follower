@@ -1,7 +1,6 @@
 //! A few utilities related to serial I/O
 
 use core::mem::MaybeUninit;
-use msp430fr2x5x_hal::serial::SerialUsci;
 use nb;
 use embedded_hal::prelude::_embedded_hal_blocking_serial_Write;
 use embedded_hal::prelude::_embedded_hal_serial_Read;

@@ -1,4 +1,5 @@
-use core::marker::PhantomData;
+use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::PwmPin;
 use msp430fr2355::{P3, TB1, TB3};
 use msp430fr2x5x_hal::gpio::*;
 use msp430fr2x5x_hal::pwm::{CCR1, CCR2, Pwm};
@@ -10,10 +11,11 @@ use msp430fr2x5x_hal::pwm::{CCR1, CCR2, Pwm};
 // ENL: P3.2
 // ENR: P3.0
 
+
 pub trait MotorPins{
-    type Direction;
-    type PWM;
-    type Enable;
+    type Direction: OutputPin;
+    type PWM: PwmPin;
+    type Enable: OutputPin;
 }
 
 pub struct LeftMotor;
@@ -30,12 +32,6 @@ impl MotorPins for RightMotor {
     type Enable = Pin<P3, Pin0, Output>;
 }
 
-#[derive(Copy, Clone)]
-pub enum MotorDirection{
-    Forward = 0,
-    Reverse = 1,
-}
-
 pub struct Motor<PINS: MotorPins> {
     dir: PINS::Direction,
     pwm: PINS::PWM,
@@ -46,7 +42,6 @@ impl<PINS: MotorPins> Motor<PINS>{
 
     pub fn new<DIR: Into<PINS::Direction>, PWM: Into<PINS::PWM>, EN: Into<PINS::Enable>>
         (dir:DIR, pwm:PWM, en:EN) -> Self{
-        // TODO
         Motor{
             dir: dir.into(),
             pwm: pwm.into(),
@@ -54,19 +49,75 @@ impl<PINS: MotorPins> Motor<PINS>{
         }
     }
 
-    pub fn set_speed(&mut self, speed: u8){
-        // TODO
+    #[inline]
+    pub fn set_speed<DUTY: Into<<<PINS as MotorPins>::PWM as PwmPin>::Duty>>(&mut self, speed: DUTY){
+        self.pwm.set_duty(speed.into());
     }
 
-    pub fn set_direction(&mut self, direction: MotorDirection){
-        // TODO
+    #[inline]
+    pub fn forward(&mut self){
+        self.dir.set_low().ok();
     }
 
+    #[inline]
+    pub fn reverse(&mut self){
+        self.dir.set_high().ok();
+    }
+
+    #[inline]
     pub fn enable(&mut self){
-        // TODO
+        self.en.set_high().ok();
     }
 
+    #[inline]
     pub fn disable(&mut self){
-        // TODO
+        self.en.set_low().ok();
+    }
+}
+
+
+pub struct MotorPair{
+    left: Motor<LeftMotor>,
+    right: Motor<RightMotor>,
+}
+
+impl MotorPair {
+    pub fn new(left: Motor<LeftMotor>, right: Motor<RightMotor>) -> Self{
+        MotorPair{left, right}
+    }
+
+    #[inline]
+    pub fn split(self) -> (Motor<LeftMotor>, Motor<RightMotor>){
+        (self.left, self.right)
+    }
+
+    #[inline]
+    pub fn set_speed(&mut self, speed: u16){
+        self.left.set_speed(speed);
+        self.right.set_speed(speed);
+    }
+
+    #[inline]
+    pub fn forward(&mut self){
+        self.left.forward();
+        self.right.forward();
+    }
+
+    #[inline]
+    pub fn reverse(&mut self){
+        self.left.reverse();
+        self.right.reverse();
+    }
+
+    #[inline]
+    pub fn enable(&mut self){
+        self.left.enable();
+        self.right.enable();
+    }
+
+    #[inline]
+    pub fn disable(&mut self){
+        self.left.disable();
+        self.right.disable();
     }
 }
