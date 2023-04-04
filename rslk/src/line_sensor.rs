@@ -129,7 +129,9 @@ impl LineSensorBusy {
         }
     }
 
-    /// Grabs the current state of the IR sensors and packs them into a single byte value.
+    /// Grabs the current logic state of the IR sensors and packs them into a single byte value.
+    ///
+    /// Keeps the pins floating.
     ///
     /// Rightmost sensor is bit 0, leftmost is bit 7
     pub fn peek_result(&self) -> u8{
@@ -146,6 +148,9 @@ impl LineSensorBusy {
         }
     }
 
+    /// Grabs the IR state and reverts pins back to output mode in preparation for a new read.
+    ///
+    /// Rightmost sensor is bit 0, leftmost is bit 7
     pub fn grab_result(mut self) -> (u8, LineSensorReady) {
         let res = (&mut self).peek_result();
         // self.ctrl_odd.set_low().ok();
