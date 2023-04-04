@@ -32,7 +32,9 @@ use serial_utils::{
     init_serial,
     print_bytes
 };
+use crate::line_sensor::{LineSensorBusy, LineSensorReady};
 use crate::motor::{LeftMotor, Motor, MotorPair, RightMotor};
+use crate::serial_utils::{byte_to_dec, byte_to_hex};
 
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -55,7 +57,12 @@ fn main() -> ! {
             .aclk_refoclk()
             .freeze(&mut fram);
         let pmm = Pmm::new(periph.PMM);
+
+        let p2 = Batch::new(periph.P2).split(&pmm);
+        let p3 = Batch::new(periph.P3).split(&pmm);
         let p4 = Batch::new(periph.P4).split(&pmm);
+        let p6 = Batch::new(periph.P6).split(&pmm);
+
         let (tx, mut rx) = SerialConfig::new(
             periph.E_USCI_A1,
             BitOrder::LsbFirst,
@@ -70,9 +77,6 @@ fn main() -> ! {
         init_serial(rx, tx);
         print_bytes(b"Serial started\n");
 
-        let p2 = Batch::new(periph.P2).split(&pmm);
-        let p3 = Batch::new(periph.P3).split(&pmm);
-        let p6 = Batch::new(periph.P6).split(&pmm);
         let pwm_tb1 = PwmParts3::new(periph.TB1,
                                      TimerConfig::smclk(&smclk),
                                      5000);
@@ -94,24 +98,52 @@ fn main() -> ! {
                                                           p3.pin0.to_output());
         let mut motor_pair = MotorPair::new(left_motor, right_motor);
 
+
+        let mut line_sensor_r : LineSensorReady = LineSensorReady::new(
+            p6.pin1.to_output(),
+            p4.pin0.to_output(),
+            p4.pin7.to_output(),
+            p6.pin3.to_output(),
+            p4.pin6.to_output(),
+            p6.pin2.to_output(),
+            p6.pin4.to_output(),
+            p2.pin4.to_output(),
+            p3.pin7.to_output(),
+            p2.pin2.to_output()
+        );
+
+
+
         print_bytes(b"Forward\n");
 
-        motor_pair.forward();
-        motor_pair.set_speed(2000u16);
-        motor_pair.enable();
-
-        delay_ms(3000u16);
-        print_bytes(b"Back\n");
-
-        motor_pair.reverse();
-        motor_pair.set_speed(1000u16);
-
-        delay_ms(3000u16);
-        print_bytes(b"Stop\n");
-
-        motor_pair.disable();
+        // motor_pair.forward();
+        // motor_pair.set_speed(2000u16);
+        // motor_pair.enable();
+        //
+        // delay_ms(3000u16);
+        // print_bytes(b"Back\n");
+        //
+        // motor_pair.reverse();
+        // motor_pair.set_speed(1000u16);
+        //
+        // delay_ms(3000u16);
+        // print_bytes(b"Stop\n");
+        //
+        // motor_pair.disable();
 
         loop {
+            let mut line_sensor_b : LineSensorBusy = line_sensor_r.start_read();
+            for _ in 0 .. 60{
+                asm::nop();
+            }
+            let res = line_sensor_b.grab_result();
+            let val = res.0;
+            line_sensor_r = res.1;
+
+            print_bytes(&byte_to_hex(val));
+            print_bytes(b"\n");
+
+            delay_ms(100u16);
             asm::barrier();
         }
     }

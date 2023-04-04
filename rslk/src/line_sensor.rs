@@ -12,7 +12,7 @@ use msp430fr2x5x_hal::gpio::*;
 // out4: P6.4
 // out5: P2.4
 // out6: P3.7
-// out7: P3.3
+// out7: P2.2
 
 pub struct LineSensorReady{
     ctrl_odd: Pin<P6, Pin1, Output>,
@@ -24,7 +24,7 @@ pub struct LineSensorReady{
     out4: Pin<P6, Pin4, Output>,
     out5: Pin<P2, Pin4, Output>,
     out6: Pin<P3, Pin7, Output>,
-    out7: Pin<P3, Pin3, Output>, // rightmost
+    out7: Pin<P2, Pin2, Output>, // rightmost
 }
 
 /// Line sensor which is currently measuring sensor outputs
@@ -38,13 +38,13 @@ pub struct LineSensorBusy{
     out4: Pin<P6, Pin4, Input<Floating>>,
     out5: Pin<P2, Pin4, Input<Floating>>,
     out6: Pin<P3, Pin7, Input<Floating>>,
-    out7: Pin<P3, Pin3, Input<Floating>>, // rightmost
+    out7: Pin<P2, Pin2, Input<Floating>>, // rightmost
 }
 
 impl LineSensorReady{
     pub fn new(
-        ctrl_odd: Pin<P6, Pin1, Output>,
-        ctrl_even: Pin<P4, Pin0, Output>,
+        mut ctrl_odd: Pin<P6, Pin1, Output>,
+        mut ctrl_even: Pin<P4, Pin0, Output>,
         out0: Pin<P4, Pin7, Output>,
         out1: Pin<P6, Pin3, Output>,
         out2: Pin<P4, Pin6, Output>,
@@ -52,9 +52,11 @@ impl LineSensorReady{
         out4: Pin<P6, Pin4, Output>,
         out5: Pin<P2, Pin4, Output>,
         out6: Pin<P3, Pin7, Output>,
-        out7: Pin<P3, Pin3, Output>,
+        out7: Pin<P2, Pin2, Output>,
     ) -> Self{
         // TODO
+        ctrl_odd.set_high().ok();
+        ctrl_even.set_high().ok();
         LineSensorReady{
             ctrl_odd,
             ctrl_even,
@@ -67,13 +69,10 @@ impl LineSensorReady{
             out6,
             out7,
         }
+
     }
 
     pub fn start_read(mut self) -> LineSensorBusy{
-        //turn on leds
-        self.ctrl_odd.set_high().ok();
-        self.ctrl_even.set_high().ok();
-
         // drive sensor array high
         self.out0.set_high().ok();
         self.out1.set_high().ok();
@@ -114,7 +113,7 @@ impl LineSensorBusy {
         out4: Pin<P6, Pin4, Input<Floating>>,
         out5: Pin<P2, Pin4, Input<Floating>>,
         out6: Pin<P3, Pin7, Input<Floating>>,
-        out7: Pin<P3, Pin3, Input<Floating>>,
+        out7: Pin<P2, Pin2, Input<Floating>>,
     ) -> Self{
         LineSensorBusy{
             ctrl_odd,
@@ -149,6 +148,8 @@ impl LineSensorBusy {
 
     pub fn grab_result(mut self) -> (u8, LineSensorReady) {
         let res = (&mut self).peek_result();
+        // self.ctrl_odd.set_low().ok();
+        // self.ctrl_even.set_low().ok();
         (res, LineSensorReady::new(
             self.ctrl_odd,
             self.ctrl_even,
