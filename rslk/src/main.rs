@@ -96,7 +96,9 @@ fn main() -> ! {
         let mut right_motor: Motor<RightMotor> = Motor::new(p3.pin1.to_output(),
                                                           right_pwm,
                                                           p3.pin0.to_output());
-        // let mut motor_pair = MotorPair::new(left_motor, right_motor);
+        left_motor.forward();
+        right_motor.forward();
+        let mut motor_pair = MotorPair::new(left_motor, right_motor);
 
 
         let mut line_sensor_r : LineSensorReady = LineSensorReady::new(
@@ -112,28 +114,8 @@ fn main() -> ! {
             p2.pin2.to_output()
         );
 
-
-
-        print_bytes(b"Forward\n");
-
-        // motor_pair.forward();
-        // motor_pair.set_speed(2000u16);
-        // motor_pair.enable();
-        //
-        // delay_ms(3000u16);
-        // print_bytes(b"Back\n");
-        //
-        // motor_pair.reverse();
-        // motor_pair.set_speed(1000u16);
-        //
-        // delay_ms(3000u16);
-        // print_bytes(b"Stop\n");
-        //
-        // motor_pair.disable();
-        left_motor.enable();
-        right_motor.enable();
-        left_motor.forward();
-        right_motor.forward();
+        print_bytes(b"Start\n");
+        motor_pair.enable();
         loop {
             let mut line_sensor_b : LineSensorBusy = line_sensor_r.start_read();
             for _ in 0 .. 60{
@@ -146,7 +128,7 @@ fn main() -> ! {
             print_bytes(&byte_to_hex(val));
             print_bytes(b"\n");
 
-            line_response(&mut left_motor, &mut right_motor, val);
+            line_response(&mut motor_pair, val);
             delay_ms(100u16);
             asm::barrier();
         }
@@ -171,7 +153,7 @@ const MAX_SPEED_50 : u16 = (MAX_SPEED as f32 * 0.5) as u16;
 const MAX_SPEED_25 : u16 = (MAX_SPEED as f32 * 0.25) as u16;
 const MAX_SPEED_13_5 : u16 = (MAX_SPEED as f32 * 0.135) as u16;
 
-fn line_response(left: &mut Motor<LeftMotor>, right: &mut Motor<RightMotor>, line_val: u8){
+fn line_response(motors: &mut MotorPair, line_val: u8){
     let bits = count_set_bits(line_val);
 
     // Based off of https://www.instructables.com/Robot-Line-Follower/
@@ -180,158 +162,128 @@ fn line_response(left: &mut Motor<LeftMotor>, right: &mut Motor<RightMotor>, lin
         1 =>{
             match line_val {
                 0x80 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_13_5);
+                    motors.left_hard();
+                }
+                0x01 =>{
+                    motors.right_hard();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED_13_5);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         2 =>{
             match line_val {
                 0b1100_0000 =>{
-                    left.set_speed(MAX_SPEED_25);
-                    right.set_speed(MAX_SPEED);
+                    motors.left();
                 }
                 0b0110_0000 =>{
-                    left.set_speed(MAX_SPEED_25);
-                    right.set_speed(MAX_SPEED);
+                    motors.left();
                 }
                 0b0011_0000 =>{
-                    left.set_speed(MAX_SPEED_50);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_slight();
                 }
                 0b0001_1000 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
                 0b0000_1100 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_50);
+                    motors.right_slight();
                 }
                 0b0000_0110 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_25);
+                    motors.right();
                 }
                 0b0000_0011 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_25);
+                    motors.right();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         3 =>{
             match line_val {
                 0b1110_0000 =>{
-                    left.set_speed(MAX_SPEED_50);
-                    right.set_speed(MAX_SPEED);
+                    motors.left();
                 }
                 0b0111_0000 =>{
-                    left.set_speed(MAX_SPEED_75);
-                    right.set_speed(MAX_SPEED);
+                    motors.left();
                 }
                 0b0011_1000 =>{
-                    left.set_speed(MAX_SPEED_90);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_slight();
                 }
                 0b0001_1100 =>{
-                    left.set_speed(MAX_SPEED_90);
-                    right.set_speed(MAX_SPEED);
+                    motors.right_slight();
                 }
                 0b0000_1110 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_75);
+                    motors.right();
                 }
                 0b0000_0111 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_50);
+                    motors.right();
                 }
                 0b1001_1000 =>{
-                    left.set_speed(0u16);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_acute();
                 }
                 0b0001_1001 =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(0u16);
+                    motors.right_acute();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         4 =>{
             match line_val {
                 0b1111_0000 => {
-                    left.set_speed(0u16);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_90();
                 }
                 0b0000_1111 => {
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(0u16);
+                    motors.right_90();
                 }
                 0b1100_1100 | 0b1101_1000 => {
-                    left.set_speed(0u16);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_acute();
                 }
                 0b0011_0011 | 0b0001_1011 => {
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(0u16);
+                    motors.right_acute();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         5 =>{
             match line_val {
                 0b1111_1000 => {
-                    left.set_speed(0u16);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_90();
                 }
                 0b0001_1111 => {
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(0u16);
+                    motors.right_90();
                 }
                 0b1101_1100 => {
-                    left.set_speed(MAX_SPEED_13_5);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_acute();
                 }
                 0b0011_1011 => {
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED_13_5);
+                    motors.right_acute();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         6 =>{
             match line_val {
                 0b1111_1100 => {
-                    left.set_speed(0u16);
-                    right.set_speed(MAX_SPEED);
+                    motors.left_90();
                 }
                 0b0011_1111 => {
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(0u16);
+                    motors.right_90();
                 }
                 _ =>{
-                    left.set_speed(MAX_SPEED);
-                    right.set_speed(MAX_SPEED);
+                    motors.straight();
                 }
             }
         }
         _ =>{
-            left.set_speed(MAX_SPEED);
-            right.set_speed(MAX_SPEED_90);
+            motors.right_90();
         }
     }
 }

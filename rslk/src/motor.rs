@@ -76,6 +76,15 @@ impl<PINS: MotorPins> Motor<PINS>{
 }
 
 
+
+const MAX_SPEED : u16 = 500u16;
+const MAX_SPEED_90 : u16 = (MAX_SPEED as f32 * 0.90) as u16;
+const MAX_SPEED_75 : u16 = (MAX_SPEED as f32 * 0.75) as u16;
+const MAX_SPEED_50 : u16 = (MAX_SPEED as f32 * 0.5) as u16;
+const MAX_SPEED_25 : u16 = (MAX_SPEED as f32 * 0.25) as u16;
+const MAX_SPEED_13_5 : u16 = (MAX_SPEED as f32 * 0.135) as u16;
+
+
 pub struct MotorPair{
     left: Motor<LeftMotor>,
     right: Motor<RightMotor>,
@@ -98,15 +107,91 @@ impl MotorPair {
     }
 
     #[inline]
-    pub fn forward(&mut self){
+    pub fn straight(&mut self){
         self.left.forward();
         self.right.forward();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED);
     }
 
     #[inline]
-    pub fn reverse(&mut self){
+    pub fn left_slight(&mut self){
+        self.left.forward();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED_50);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn left(&mut self){
         self.left.reverse();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED_50);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn left_hard(&mut self){
+        self.left.reverse();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED_75);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn left_90(&mut self){
+        self.left.reverse();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn left_acute(&mut self){
+        self.left.reverse();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn right_slight(&mut self){
+        self.left.forward();
+        self.right.forward();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED_50);
+    }
+
+    #[inline]
+    pub fn right(&mut self){
+        self.left.forward();
         self.right.reverse();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED_50);
+    }
+
+    #[inline]
+    pub fn right_hard(&mut self){
+        self.left.forward();
+        self.right.reverse();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED_75);
+    }
+
+    #[inline]
+    pub fn right_90(&mut self){
+        self.left.forward();
+        self.right.reverse();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED);
+    }
+
+    #[inline]
+    pub fn right_acute(&mut self){
+        self.left.forward();
+        self.right.reverse();
+        self.left.set_speed(MAX_SPEED);
+        self.right.set_speed(MAX_SPEED);
     }
 
     #[inline]
