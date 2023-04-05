@@ -129,7 +129,7 @@ fn main() -> ! {
             print_bytes(b"\n");
 
             line_response(&mut motor_pair, val);
-            delay_ms(100u16);
+            // delay_ms(10u16);
             asm::barrier();
         }
     }
@@ -146,7 +146,7 @@ fn count_set_bits(mut val: u8) -> u8{
     count
 }
 
-const MAX_SPEED : u16 = 500u16;
+const MAX_SPEED : u16 = 1000u16;
 const MAX_SPEED_90 : u16 = (MAX_SPEED as f32 * 0.90) as u16;
 const MAX_SPEED_75 : u16 = (MAX_SPEED as f32 * 0.75) as u16;
 const MAX_SPEED_50 : u16 = (MAX_SPEED as f32 * 0.5) as u16;
@@ -154,138 +154,38 @@ const MAX_SPEED_25 : u16 = (MAX_SPEED as f32 * 0.25) as u16;
 const MAX_SPEED_13_5 : u16 = (MAX_SPEED as f32 * 0.135) as u16;
 
 fn line_response(motors: &mut MotorPair, line_val: u8){
-    let bits = count_set_bits(line_val);
-
-    // Based off of https://www.instructables.com/Robot-Line-Follower/
-    match bits{
-        0 =>{}
-        1 =>{
-            match line_val {
-                0x80 =>{
-                    motors.left_hard();
-                }
-                0x01 =>{
-                    motors.right_hard();
-                }
-                _ =>{
-                    motors.straight();
-                }
+    // get mass of bits
+    let mut mass: i8 = 0;
+    for i in 0..8 {
+        if line_val & (1 << i) != 0 {
+            if i < 4 {
+                mass += 1;
+            } else {
+                mass -= 1;
             }
-        }
-        2 =>{
-            match line_val {
-                0b1100_0000 =>{
-                    motors.left();
-                }
-                0b0110_0000 =>{
-                    motors.left();
-                }
-                0b0011_0000 =>{
-                    motors.left_slight();
-                }
-                0b0001_1000 =>{
-                    motors.straight();
-                }
-                0b0000_1100 =>{
-                    motors.right_slight();
-                }
-                0b0000_0110 =>{
-                    motors.right();
-                }
-                0b0000_0011 =>{
-                    motors.right();
-                }
-                _ =>{
-                    motors.straight();
-                }
-            }
-        }
-        3 =>{
-            match line_val {
-                0b1110_0000 =>{
-                    motors.left();
-                }
-                0b0111_0000 =>{
-                    motors.left();
-                }
-                0b0011_1000 =>{
-                    motors.left_slight();
-                }
-                0b0001_1100 =>{
-                    motors.right_slight();
-                }
-                0b0000_1110 =>{
-                    motors.right();
-                }
-                0b0000_0111 =>{
-                    motors.right();
-                }
-                0b1001_1000 =>{
-                    motors.left_acute();
-                }
-                0b0001_1001 =>{
-                    motors.right_acute();
-                }
-                _ =>{
-                    motors.straight();
-                }
-            }
-        }
-        4 =>{
-            match line_val {
-                0b1111_0000 => {
-                    motors.left_90();
-                }
-                0b0000_1111 => {
-                    motors.right_90();
-                }
-                0b1100_1100 | 0b1101_1000 => {
-                    motors.left_acute();
-                }
-                0b0011_0011 | 0b0001_1011 => {
-                    motors.right_acute();
-                }
-                _ =>{
-                    motors.straight();
-                }
-            }
-        }
-        5 =>{
-            match line_val {
-                0b1111_1000 => {
-                    motors.left_90();
-                }
-                0b0001_1111 => {
-                    motors.right_90();
-                }
-                0b1101_1100 => {
-                    motors.left_acute();
-                }
-                0b0011_1011 => {
-                    motors.right_acute();
-                }
-                _ =>{
-                    motors.straight();
-                }
-            }
-        }
-        6 =>{
-            match line_val {
-                0b1111_1100 => {
-                    motors.left_90();
-                }
-                0b0011_1111 => {
-                    motors.right_90();
-                }
-                _ =>{
-                    motors.straight();
-                }
-            }
-        }
-        _ =>{
-            motors.right_90();
         }
     }
+
+    let mut left_speed: i32 = 0;
+    let mut right_speed: i32 = 0;
+    if mass == 0 {
+        left_speed = MAX_SPEED as i32;
+        right_speed = MAX_SPEED as i32;
+    } else if mass > 2 {
+        left_speed = MAX_SPEED as i32;
+        right_speed = -(MAX_SPEED_25 as i32);
+    } else if mass < -2 {
+        left_speed = -(MAX_SPEED_25 as i32);
+        right_speed = MAX_SPEED as i32;
+    } else if mass > 0 {
+        left_speed = MAX_SPEED as i32;
+        right_speed = 0;
+    } else if mass < 0{
+        left_speed = 0;
+        right_speed = MAX_SPEED_90 as i32;
+    }
+    motors.set(left_speed, right_speed);
+
 }
 
 fn delay_ms(ms: u16){

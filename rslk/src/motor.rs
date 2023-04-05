@@ -101,6 +101,24 @@ impl MotorPair {
     }
 
     #[inline]
+    pub fn set(&mut self, vel_left: i32, vel_right: i32){
+        if vel_left > 0 {
+            self.left.forward();
+        } else {
+            self.left.reverse();
+        }
+        // make positive
+        self.left.set_speed(vel_left.abs() as u16);
+
+        if vel_right > 0 {
+            self.right.forward();
+        } else {
+            self.right.reverse();
+        }
+        self.right.set_speed(vel_right.abs() as u16);
+    }
+
+    #[inline]
     pub fn set_speed(&mut self, speed: u16){
         self.left.set_speed(speed);
         self.right.set_speed(speed);
